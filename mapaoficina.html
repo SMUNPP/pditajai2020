@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>mapaoficinas</title>
+    <link rel="stylesheet" href="lib/leaflet.css" />
+    <link rel="stylesheet" href="lib/leaflet-measure.css" />
+    <script src="lib/jquery-3.4.1.min.js"></script>
+    <script src="lib/leaflet.js"></script>
+    <script src="lib/leaflet-measure.pt_BR.js"></script>
+</head>
+<style>
+    body {
+        padding: 0;
+        margin: 0;
+    }
+
+    html,
+    body,
+    #mapa {
+        height: 100%;
+        width: 100%;
+    }
+</style>
+
+<body>
+
+    <div id="mapa"></div>
+    <pre id="eventoutput" style="display: none;"></pre>
+
+    <script>
+        //#div do mapa
+        let mapa = new L.Map('mapa', {
+            zoom: 14,
+            minZoom: 12,
+            maxZoom: 16,
+            maxBounds: [
+                //south west
+                [-27.3000, -49.2300],
+                //north east
+                [-26.3285, -48.3200]
+            ],
+            center: new L.latLng([-26.9046, -48.6874]),
+            zoomControl: false,
+            preferCanvas: true
+        });
+
+        //Mapa base, OSM
+        let tileosm = new L.TileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            minZoom: 12,
+            maxZoom: 16,
+            opacity: 0.2,
+            attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>, <a href="mailto:jaceguay@itajai.sc.gov.br?Subject=WebGIS" target="_top">SIE</a>'
+        }).addTo(mapa);
+
+        //Mapa base, google
+        let tilegg = new L.TileLayer('http://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
+            opacity: 0.5,
+            maxZoom: 20,
+            transparent: false,
+            attribution: '©2018 Google, Itajaí/SC, <a href="mailto:jaceguay@itajai.sc.gov.br?Subject=WebGIS" target="_top">SIE</a>',
+            subdomains: ['mt0', 'mt1', 'mt2', 'mt3']
+        });
+
+        let tilesmu = new L.TileLayer('tiles/mapaoficinas/{z}/{x}/{y}.png', {
+            minZoom: 12,
+            maxZoom: 16,
+            attribution: 'Município de Itajaí/SC, <a href="mailto:jaceguay@itajai.sc.gov.br?Subject=WebGIS" target="_top">SIE</a>'
+        }).addTo(mapa);
+
+        //barra escala
+        L.control.scale({
+            position: "bottomright",
+            imperial: false
+        }).addTo(mapa);
+        //Norte
+        let nortemapa = L.control({
+            position: 'bottomright'
+        });
+        nortemapa.onAdd = function (map) {
+            var div = L.DomUtil.create('div', 'info2 legend');
+            div.innerHTML +=
+                '<center><sub><font size="4">▲</font></sub><br/>' +
+                '<sup><font size="2">N</font></sup></center>'
+            return div;
+        };
+        nortemapa.addTo(mapa);
+
+        var baseMaps = {
+            "mapa oficinas": tileosm,
+            "satélite google": tilegg
+
+        };
+
+        L.control.layers(baseMaps, null, { collapsed: false }).addTo(mapa);
+
+        //Medidas área
+        var measureControl = new L.Control.Measure({
+            primaryLengthUnit: 'meters',
+            secondaryLengthUnit: 'kilometers',
+            primaryAreaUnit: 'sqmeters',
+            secondaryAreaUnit: 'hectares'
+        });
+        measureControl.addTo(mapa);
+        mapa.on('measurefinish', function (evt) {
+            writeResults(evt);
+        });
+        function writeResults(results) {
+            document.getElementById('eventoutput').innerHTML = JSON.stringify(
+                {
+                    area: results.area,
+                    areaDisplay: results.areaDisplay,
+                    lastCoord: results.lastCoord,
+                    length: results.length,
+                    lengthDisplay: results.lengthDisplay,
+                    pointCount: results.pointCount,
+                    points: results.points
+                },
+                null,
+                2
+            );
+        };
+/*
+        L.Control.Watermark = L.Control.extend({
+            onAdd: function (mapa) {
+                var img = L.DomUtil.create('img');
+
+                img.src = 'imagens/legenda.png';
+                img.style.width = '200px';
+
+                return img;
+            },
+
+            onRemove: function (map) {
+                // Nothing to do here
+            }
+        });
+
+        L.control.watermark = function (opts) {
+            return new L.Control.Watermark(opts);
+        }
+
+        L.control.watermark({ position: 'bottomleft' }).addTo(mapa);
+
+        //zonas clique
+        //CCS
+
+        $.getJSON("data/zonoutubro.geojson", (data) => {
+            L.geoJson(data, {
+                style: (feature) => {
+                    return {
+                        fillColor: false,
+                        stroke: false
+                    };
+                },
+                onEachFeature: (feature, layer) => {
+                    layer.bindPopup(
+                        '<strong>' + 'Zona: ' + feature.properties.zoneamento + '</strong>'
+                        
+                    )
+                }
+            }).addTo(mapa);
+            console.log(data);
+        });
+*/
+    </script>
+
+
+</body>
+
+</html>
